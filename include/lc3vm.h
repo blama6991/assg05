@@ -144,7 +144,10 @@ void user_mode();
 void supervisor_mode();
 uint16_t priority();
 void set_priority(uint16_t level);
+
 // task 2 stack manipulation function declarations here
+void push(uint16_t val);
+void pop();
 
 // task 3 MCR clock latch manipulation
 

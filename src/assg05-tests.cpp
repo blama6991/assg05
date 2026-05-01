@@ -18,8 +18,8 @@ using namespace std;
 #include "lc3vm.h"
 
 #define task1_1
-#undef task1_2
-#undef task2
+#define task1_2
+#define task2
 #undef task3
 #undef task4_1
 #undef task4_2
