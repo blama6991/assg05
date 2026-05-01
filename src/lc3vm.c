@@ -49,6 +49,12 @@ uint16_t PC_START = 0x3000;
  */
 uint16_t mem_read(uint16_t address)
 {
+  if (is_user_mode() && ((address < 0x3000) || (address > 0xFDFF)))
+  {
+    except(0x02);
+    return 0x0;
+  }
+
   if (address == KBDR_ADDR)
   {
     iomap[KBSR] &= 0x7FFF;
@@ -73,6 +79,12 @@ uint16_t mem_read(uint16_t address)
  */
 void mem_write(uint16_t address, uint16_t val)
 {
+  if (is_user_mode() && ((address < 0x3000) || (address > 0xFDFF)))
+  {
+    except(0x02);
+    return;
+  }
+
   if (address == DDR_ADDR)
   {
     iomap[DSR] &= 0x7FFF;
@@ -469,11 +481,20 @@ void rti(uint16_t i)
 {
   (void)i;
 
-  reg[PSR] = mem_read(reg[R6]);
+  if (is_user_mode())
+  {
+    except(0x00);
+    return;
+  }
+
+  uint16_t saved_psr = mem_read(reg[R6]);
   pop();
 
-  reg[RPC] = mem_read(reg[R6]);
+  uint16_t saved_rpc = mem_read(reg[R6]);
   pop();
+
+  reg[PSR] = saved_psr;
+  reg[RPC] = saved_rpc;
 
   if (is_user_mode())
   {
@@ -492,7 +513,11 @@ void rti(uint16_t i)
  *   destination and source register operands, and to extract the
  *   second source register or the immediate value encoded in the
  */
-void res(uint16_t i) {}
+void res(uint16_t i)
+{
+  (void)i;
+  except(0x01);
+}
 
 /** @brief trap instruction
  *
@@ -522,7 +547,31 @@ void trap(uint16_t i)
 
   reg[RPC] = mem_read(TRP(i));
 }
+/**
+ * @brief Invoke an LC-3 exception handler.
+ *
+ * Saves the current PSR and PC on the supervisor stack, switches from
+ * user mode to supervisor mode if needed, and loads the exception handler
+ * address from the exception vector table.
+ *
+ * @param i The 8-bit exception vector value.
+ */
+void except(uint16_t i)
+{
+  uint16_t temp = reg[PSR];
 
+  if (is_user_mode())
+  {
+    reg[USP] = reg[R6];
+    reg[R6] = reg[SSP];
+    supervisor_mode();
+  }
+
+  push(reg[RPC]);
+  push(temp);
+
+  reg[RPC] = mem_read(0x0100 + TRP(i));
+}
 /**
  * LC-3 instruction microcode store / lookup table.  Need to define array
  * of function pointers with all (microcode) functions inserted in
