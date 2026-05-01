@@ -754,7 +754,8 @@ void supervisor_mode()
  *   significant 3 bits should have any value since only priority levels
  *   0 - 7 are possible
  */
-
+uint16_t priority()
+{ return (reg[PSR] >> 8) & 0x7; }
 /** @brief set priority
  *
  * Set the priority in the PSR to the indicated priority level.  We
@@ -765,7 +766,11 @@ void supervisor_mode()
  *   it is undefined what happens if a value not in this range is set for the
  *   priority.
  */
-
+void set_priority(uint16_t level)
+{
+  reg[PSR] &= 0xF8FF;
+  reg[PSR] |= (level & 0x7) << 8;
+}
 /** @brief push value to current stack
  *
  * This method assumes `R6` holds the address of the current stack in use by running
