@@ -150,6 +150,10 @@ void push(uint16_t val);
 void pop();
 
 // task 3 MCR clock latch manipulation
+// task 3 MCR clock latch manipulation
+void enable_clock();
+void disable_clock();
+bool is_running();
 
 // task 7 exceptions
 
